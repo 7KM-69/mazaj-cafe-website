@@ -1,0 +1,61 @@
+
+
+# Brand Identity & UI/UX Specification Guide
+
+## 1. Core Visual Identity (Brand Assets & Design Tokens)
+
+### Color Palette (Design Tokens)
+
+* **Primary Color (Action & Focus):**
+* `--primary-red`: `#C8102E` (Deep Crimson / Warm Red)
+* *Usage:* Primary CTA buttons ("Order Now", "Our Menu"), hover effects, promotional banners, and critical highlights.
+
+
+* **Secondary/Canvas Color (Backgrounds):**
+* `--bg-cream`: `#FDFBF7` (Warm Cream / Soft Beige)
+* *Usage:* Main website layout background and individual product card canvases to generate a cozy, premium, and appetizing interface.
+
+
+* **Accent Colors (Contextual & Campaign Elements):**
+* `--accent-blue`: `#0B132B` (Midnight Blue / Deep Indigo)
+* *Usage:* Dark header text, footer backgrounds, and special events or sports-related campaign structures.
+* `--accent-teal`: `#00A896` (Mint Green / Vibrant Teal)
+* *Usage:* Highlighting seasonal beverages (mojitos), new arrivals, and special category badges.
+
+
+* **Typography Text Color:**
+* `--text-dark`: `#2B2523` (Warm Charcoal / Dark Brown)
+* *Usage:* Standard body paragraphs, ingredient lists, and pricing text to ensure high contrast without the harshness of pure black.
+
+
+
+### Typography & Fonts (Google Fonts Integration)
+
+* **Heading Hierarchy (`<h1>`, `<h2>`, `<h3>`):**
+* *Arabic Typography:* **Cairo** (Weight: `900 Black` or `700 Bold`)
+* *English Typography:* **Montserrat** (Weight: `900 Black`)
+* *Aesthetic Style:* Bold, high-impact display setting designed to convey confidence and mood.
+
+
+* **Body & Utility Text (`<p>`, `<span>`, `<a>`):**
+* *Arabic Typography:* **Cairo** (Weight: `400 Regular` or `500 Medium`)
+* *English Typography:* **Montserrat** (Weight: `400 Regular`)
+* *Aesthetic Style:* Clean, highly geometric, and spacious for optimal screen legibility.
+
+
+
+### Visual Style / Design System Aesthetic
+
+* **Layout Pattern:** **Bento Grid & Clean Modular Sections**. Use structured grids containing blocks with soft, fluid layout definitions.
+* **Component Borders:** Rounded corners for UI components (cards, interactive containers, imagery) using a `border-radius` scale between `12px` and `20px` to mirror the modern layout structure.
+* **Atmosphere & Imagery:** Warm, highly contrasted lifestyle media layout that naturally pairs high-definition studio food photography against clean, airy structural blocks.
+
+---
+
+## 2. Brand Strategy & Core Info
+
+* **Account Name / Identity:** `badri.hania.eg` (Associated with Mazaj and Tiago).
+* **Industry / Niche:** Food & Beverage / Specialty Coffee Shop & Casual Dining.
+* **Core Product or Service Offered:** Specialty espresso/iced coffee line, signature mocktails, gourmet casual sandwiches (cold cuts, tacos), and premium desserts/chocolates.
+* **Target Audience:** Young adults, sports enthusiasts, students, and social groups seeking an energetic, modern hangout spot with high-quality casual dining.
+* **Main Value Proposition / Core Message:** Curating an elevated mood ("Mazaj") and communal energy by delivering premium, comforting casual fare alongside specialty drinks, heavily anchored in national pride and community gathering hubs.
