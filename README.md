@@ -23,6 +23,10 @@ scroll, with GSAP-driven reveals.
 It's a **front-end / brand site**: no backend, no checkout. The craft is in the layout, the type, the
 image treatment, and the motion.
 
+## The full page
+
+![The Mazaj site — full page](docs/preview/home.png)
+
 ## Features
 
 - **Bilingual, Arabic + English.** Arabic display type sits alongside English, with the brand's own voice
