@@ -7,6 +7,8 @@ Single page, hand-built, GSAP scroll motion.
 
 HTML · Tailwind CSS · GSAP
 
+### ▶ [View the live site](https://7km-69.github.io/mazaj-cafe-website/)
+
 ![Mazaj](docs/preview/hero.png)
 
 </div>
