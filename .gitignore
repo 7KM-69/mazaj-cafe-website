@@ -1,3 +1,10 @@
 ﻿node_modules/
 .DS_Store
+.shots/
+
+# Source material and research notes, kept locally only — same call as 463a910,
+# which took the Instagram scraper dataset and the internal menu-links note out.
+videos/_raw/
+TIKTOK-VIDEOS.md
+tiktok-videos-full.json
 
