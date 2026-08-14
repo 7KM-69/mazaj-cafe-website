@@ -244,10 +244,14 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   min-height: 100vh;
   min-height: 100dvh;
 }
-.hero-video {
+/* The still sits underneath the video, not in the video's `poster` attribute:
+   when autoplay is refused we hide the <video> outright (iOS paints a play
+   button over any paused one) and this is what the hero falls back to. */
+.hero-poster, .hero-video {
   position: absolute; inset: 0; z-index: 0;
   width: 100%; height: 100%; object-fit: cover; object-position: center 45%;
 }
+.hero-video.is-dead { display: none; }
 /* Darkest under the copy. The page is RTL, so the text block sits on the right
    and the veil has to ramp up toward the right edge, not away from it —
    `linear-gradient` is physical and does not flip with `dir`. */
@@ -630,7 +634,8 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
      The copy ships in the markup so crawlers and JS-off visits see it, and is
      re-hydrated from content/hero-content.json when that file resolves. -->
 <section class="hero">
-  <video class="hero-video" id="hero-video" src="videos/hero.mp4" poster="instagram_images/post_041.jpg"
+  <img class="hero-poster" src="instagram_images/post_041.jpg" alt="" aria-hidden="true" fetchpriority="high">
+  <video class="hero-video" id="hero-video" src="videos/hero.mp4"
          muted loop playsinline autoplay preload="auto" aria-hidden="true" tabindex="-1"></video>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="hero-foot" aria-hidden="true"></div>
@@ -1028,23 +1033,57 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
     /* Autoplay needs the properties set, not just the attributes: some engines
        evaluate `muted` from the IDL attribute before the parser-set one lands. */
-    if (video) {
+    /* A paused <video> gets a play-button overlay painted over it on iOS, so a
+       hero that cannot animate has to drop to the still rather than sit there
+       looking like a broken player. `.is-dead` hides it and reveals
+       `.hero-poster` underneath. */
+    function killVideo() { if (video) video.classList.add('is-dead'); }
+
+    if (!video) {
+      markLoaded('video');
+    } else if (reduced) {
+      killVideo();                    /* same rule as the reel strip: no video at all */
+      markLoaded('video');
+    } else {
       video.muted = true; video.defaultMuted = true; video.playsInline = true;
-      video.playbackRate = 1.5;
-      video.addEventListener('ratechange', function () {
-        if (video.playbackRate !== 1.5) video.playbackRate = 1.5;
-      });
       video.addEventListener('loadeddata', function () { markLoaded('video'); }, { once: true });
       video.addEventListener('error', function () {
         console.error('[Mazaj] hero video failed to load: videos/hero.mp4', video.error);
         markLoaded('video');
+        killVideo();
       }, { once: true });
-      var p = video.play();
-      if (p && p.catch) p.catch(function (err) {
-        console.error('[Mazaj] hero video autoplay was blocked:', err);
-      });
-    } else {
-      markLoaded('video');
+
+      var rate = 1.5, strikes = 0, last = -1;
+
+      function nudge() {
+        var p = video.play();
+        if (p && p.catch) p.catch(function (err) {
+          console.error('[Mazaj] hero video autoplay was blocked:', err);
+        });
+      }
+
+      video.playbackRate = rate;
+      nudge();
+
+      /* 1.5x is an enhancement, not a requirement. Safari honours it on the
+         first pass and then **pauses at the loop boundary** — the clip runs
+         once, wraps to 0 and never restarts, which is exactly how the hero
+         ended up frozen behind a play button. So watch for a stall rather than
+         trusting a single check at startup: drop to 1x on the first one, and
+         only give up on the still if 1x cannot keep it moving either.
+         Never re-assert the rate from a `ratechange` handler — that just pins
+         the element to a rate it has already refused. */
+      setInterval(function () {
+        if (video.classList.contains('is-dead') || document.hidden) return;
+        var t = video.currentTime;
+        var stalled = video.paused || t === last;
+        last = t;
+        if (!stalled) { strikes = 0; return; }
+        strikes++;
+        if (strikes > 2) { killVideo(); return; }
+        if (rate !== 1) { rate = 1; video.playbackRate = 1; }
+        if (video.paused) nudge();
+      }, 1200);
     }
 
     /* The copy is already in the markup; this only overwrites it when the JSON
@@ -1391,7 +1430,10 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
       var v = tile.querySelector('video') || mount(tile);
       if (!v) return;
       var p = v.play();
-      if (p && p.catch) p.catch(function () {});
+      /* A tile that is refused playback must drop its <video> and go back to
+         being a photograph. Leaving a paused one in place gives every tile an
+         iOS play-button overlay — twenty-one of them across the strip. */
+      if (p && p.catch) p.catch(function () { v.remove(); });
     }
 
     /* The track holds three screens' worth of tiles; decoding all 21 at once
@@ -1400,6 +1442,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
       var io = new IntersectionObserver(function (entries) {
         entries.forEach(function (e) {
           var v = e.target.querySelector('video');
+          e.target.dataset.inview = e.isIntersecting ? '1' : '0';
           if (e.isIntersecting) play(e.target);
           else if (v) v.pause();
         });
@@ -1408,6 +1451,26 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     } else {
       tiles.slice(0, REELS.length).forEach(play);
     }
+
+    /* Safari caps how many videos may decode at once. Past that cap `play()`
+       neither throws nor plays — the tile just sits there paused, which on iOS
+       means a play-button overlay on a tile the visitor never asked to control.
+       Sweep for on-screen tiles that were told to play and did not, give them
+       one retry, then drop the <video> so the tile goes back to being the
+       photograph it ships as. */
+    setInterval(function () {
+      if (document.hidden) return;
+      tiles.forEach(function (t) {
+        if (t.dataset.inview !== '1') return;
+        var v = t.querySelector('video');
+        if (!v) return;
+        if (!v.paused) { t.dataset.strikes = '0'; return; }
+        var s = (parseInt(t.dataset.strikes, 10) || 0) + 1;
+        t.dataset.strikes = String(s);
+        if (s > 1) v.remove();
+        else { var p = v.play(); if (p && p.catch) p.catch(function () { v.remove(); }); }
+      });
+    }, 2000);
 
     document.addEventListener('visibilitychange', function () {
       Array.prototype.forEach.call(track.querySelectorAll('video'), function (v) {
