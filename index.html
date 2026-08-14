@@ -1075,14 +1075,23 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
          the element to a rate it has already refused. */
       setInterval(function () {
         if (video.classList.contains('is-dead') || document.hidden) return;
+
+        /* Only a video that *could* be playing counts as stalled. Below
+           HAVE_FUTURE_DATA it is simply buffering, which on a phone connection
+           routinely takes longer than the give-up window — treating that as a
+           refusal hid the hero on every browser, not just the broken one. */
+        if (video.readyState < 3) { last = -1; return; }
+
         var t = video.currentTime;
         var stalled = video.paused || t === last;
         last = t;
         if (!stalled) { strikes = 0; return; }
+
         strikes++;
-        if (strikes > 2) { killVideo(); return; }
-        if (rate !== 1) { rate = 1; video.playbackRate = 1; }
+        if (strikes === 2 && rate !== 1) { rate = 1; video.playbackRate = 1; }
         if (video.paused) nudge();
+        /* ~6s of "has the data, still will not move" before dropping to the still. */
+        if (strikes > 5) killVideo();
       }, 1200);
     }
 
