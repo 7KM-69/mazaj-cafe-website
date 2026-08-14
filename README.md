@@ -18,7 +18,7 @@ HTML · CSS · Vanilla JS
 ## What this is
 
 A single-page site for **Mazaj (مزاج)** — the Egypt arm of *بدري وهنية*, a spice, nut, cake and
-specialty-coffee house that started in **Gaza in 1970** and now runs three branches in Cairo.
+specialty-coffee house that started in **Gaza in 1978** and now runs three branches in Cairo.
 
 The page is Arabic-first and fully RTL: a full-screen video hero behind a progress-tracking preloader,
 the brand's origin story with counting statistics and a fanned photo deck, four menu categories that

@@ -232,8 +232,10 @@ reveal and reel units in JS. Any new animation must survive that block being act
   `aspect-ratio` and margins are silently dropped on the inline box.
 - **`og:image` must stay an absolute URL** (relative ones are unreliable across crawlers), so it is
   pinned to the GitHub Pages host even though the site also runs on Vercel. The card is
-  `brand/og-cover.jpg` — the hero rendered at 1200×630 with the header hidden and the video paused at
-  2.5s. Regenerate it by screenshotting `.hero` at that viewport, not by cropping a page shot.
+  `brand/og-cover-v2.jpg` — the hero rendered at 1200×630 with the header hidden and the video paused
+  at 2.5s. Regenerate it by screenshotting `.hero` at that viewport, not by cropping a page shot.
+  **The founding year is rendered into it**, so a copy change to that line means regenerating the card
+  and both `docs/preview/` shots, not just editing the markup.
   **Ship a changed card under a new filename.** WhatsApp, Facebook and X cache the preview against
   the image URL, so overwriting the old file leaves everyone looking at the stale card. Existing
   chat threads keep their cached preview regardless; Facebook's Sharing Debugger forces a re-scrape.
