@@ -1301,11 +1301,18 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
       /* One frame on the stacked transform, then fan — otherwise the browser
          collapses both states into a single style recalc and nothing animates. */
-      requestAnimationFrame(function () {
-        requestAnimationFrame(function () {
-          openCards.forEach(function (c, i) { place(c, i, n); });
-        });
-      });
+      var placed = false;
+      function fan() {
+        if (placed) return;
+        placed = true;
+        openCards.forEach(function (c, i) { place(c, i, n); });
+      }
+      requestAnimationFrame(function () { requestAnimationFrame(fan); });
+      /* Safety net, same reasoning as the scroll reveal: rAF is suspended while
+         the window is occluded or backgrounded, and a fan that never fires
+         leaves the modal showing nothing at all. Losing the animation is fine;
+         losing the menus is not. */
+      setTimeout(fan, 700);
     }
 
     function close() {
