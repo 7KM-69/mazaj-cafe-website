@@ -12,15 +12,23 @@
   <link rel="icon" href="brand/logo.jpg">
   <link rel="apple-touch-icon" href="brand/logo.jpg">
 
-  <!-- Social sharing — og:image must be absolute, so it points at the Pages deploy -->
+  <!-- Social sharing — og:image must be absolute, so it points at the Pages deploy.
+       `brand/og-cover.jpg` is the hero rendered at 1200x630 (see CLAUDE.md for how
+       to regenerate it). WhatsApp and Facebook cache a preview against the image
+       URL, so a changed card needs a NEW filename, not an overwritten one. -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Mazaj — مزاج">
   <meta property="og:title" content="مزاج · Mazaj — قهوة مختصة وحلويات">
   <meta property="og:description" content="من غزة إلى مصر منذ 1970 — بهارات وتوابل ومكسرات وكيك وحلويات وقهوة مختصة.">
   <meta property="og:url" content="https://7km-69.github.io/mazaj-cafe-website/">
-  <meta property="og:image" content="https://7km-69.github.io/mazaj-cafe-website/instagram_images/post_025.jpg">
+  <meta property="og:image" content="https://7km-69.github.io/mazaj-cafe-website/brand/og-cover.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="مزاج · Mazaj — قهوة مختصة وحلويات">
   <meta property="og:locale" content="ar_EG">
   <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:image" content="https://7km-69.github.io/mazaj-cafe-website/brand/og-cover.jpg">
 
   <!-- Preconnect: Google Fonts DNS + TLS resolved before the CSS request fires -->
   <link rel="preconnect" href="https://fonts.googleapis.com">

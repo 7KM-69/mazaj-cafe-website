@@ -231,7 +231,12 @@ reveal and reel units in JS. Any new animation must survive that block being act
 - **Menu cards are `<button>`s whose children are `<span>`s.** They need `display: block` or
   `aspect-ratio` and margins are silently dropped on the inline box.
 - **`og:image` must stay an absolute URL** (relative ones are unreliable across crawlers), so it is
-  pinned to the GitHub Pages host even though the site also runs on Vercel.
+  pinned to the GitHub Pages host even though the site also runs on Vercel. The card is
+  `brand/og-cover.jpg` — the hero rendered at 1200×630 with the header hidden and the video paused at
+  2.5s. Regenerate it by screenshotting `.hero` at that viewport, not by cropping a page shot.
+  **Ship a changed card under a new filename.** WhatsApp, Facebook and X cache the preview against
+  the image URL, so overwriting the old file leaves everyone looking at the stale card. Existing
+  chat threads keep their cached preview regardless; Facebook's Sharing Debugger forces a re-scrape.
 - Images are unoptimized: ~27 MB of assets. Do not add more full-size PNGs to `docs/preview/` without
   compressing — both previews there are JPEG for that reason.
 - `docs/preview/hero.jpg` and `home.jpg` are embedded in `README.md`; regenerate them if the hero or
