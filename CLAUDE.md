@@ -55,13 +55,21 @@ layer, no checkout.
 Everything is `index.html` — markup, CSS, and JS in one file, served as-is. That is deliberate; do not
 split it into partials, add a framework, or introduce a build step.
 
-**Page order:** Header → Hero → قصتنا (Our Story) → MAZAJ banner → المنيو (menu categories) →
+**Page order:** preloader → Header → Hero → قصتنا (Our Story) → المنيو (menu categories) →
 reel strip → فروعنا (branches) → footer → menu modal.
 
 The page was rebuilt in August 2026 from the Claude Design component *Mazaj Cafe.dc.html* (design
-project `01b42218-d3cf-49db-bedb-6894f402aad0`). If a redesign arrives from there again it ships as a
-`.dc.html` with `<helmet>`, `{{ }}` bindings, `sc-if` / `sc-for` and a `DCLogic` class — none of that
-runs here. Translate it to vanilla; do not ship the `support.js` runtime.
+project `01b42218-d3cf-49db-bedb-6894f402aad0`), and updated again from the same project on
+2026-08-14 (preloader, video hero, story fan, measured menu fan; the MAZAJ torn-paper banner was
+dropped). If a redesign arrives from there again it ships as a `.dc.html` with `<helmet>`, `{{ }}`
+bindings, `sc-if` / `sc-for` and a `DCLogic` class — none of that runs here. Translate it to vanilla;
+do not ship the `support.js` runtime.
+
+**Two things the design handoff gets wrong — check them on every sync:**
+1. **Branch addresses.** The design file carries shortened, wrong entries for Nasr City ("مدينة نصر —
+   القاهرة") and Madinaty ("مدينتي — القاهرة الجديدة"), and generic map queries to match. The repo's
+   fuller addresses are field-verified. Never overwrite them from a handoff.
+2. **The hero gradient direction** — see the RTL trap below.
 
 ### Styling: one stylesheet, classes, no inline soup
 
@@ -113,6 +121,49 @@ so English runs are the exception and each one carries `lang="en"` plus the `.lt
 - The file is UTF-8. The PowerShell console mangles Arabic on output; never judge Arabic text from a
   terminal dump — verify in a screenshot.
 
+### The preloader
+
+A full-screen `#preload` overlay in the markup (not injected — it has to cover the very first paint).
+The logo fills by `clip-path` as four tracked assets resolve: `logo`, `poster`, `content`, `video`.
+
+- Progress is **real**. Each unit calls the `markLoaded(key)` returned by the preloader IIFE — including
+  on failure, so a broken asset advances the bar instead of hanging it.
+- A **6-second hard cap** dismisses the overlay regardless. Nothing may leave a visitor stuck behind it.
+- It scroll-locks `body` while visible and always releases on dismiss.
+- `<noscript>` removes it outright, since a JS-off visit could never dismiss it.
+
+### The hero
+
+Full-viewport (`100dvh`) with `videos/hero.mp4` as a background layer, `instagram_images/post_041.jpg`
+as its poster, two scrims, and the copy on top.
+
+- `muted`/`loop`/`playsinline` are set as **properties in JS**, not just attributes — some engines read
+  the IDL attribute before the parser-set one lands and refuse to autoplay. `playbackRate` is pinned
+  to 1.5 through a `ratechange` listener.
+- **The copy ships in the HTML** and `content/hero-content.json` only *overwrites* it once fetched.
+  Do not invert this: the design prototype renders the hero only after the fetch resolves, which leaves
+  crawlers and any failed request looking at an empty hero.
+- `[data-rise]` elements get a staggered entrance applied imperatively, so a theme flip can't replay it.
+- Re-encode any new hero video before committing. The supplied file was 9.8 MB of 15.5 Mbps H.264 with
+  a useless audio track; `-crf 26 -preset slow -an -movflags +faststart` took it to 2.5 MB.
+
+### The header
+
+`position: fixed`, transparent with a blur over the hero, and `.is-solid` (surface palette) once the
+hero has scrolled past — toggled by an IntersectionObserver on `.hero`, not a scroll listener. The
+design prototype has it `position: absolute` inside the hero, which scrolls the nav away permanently;
+that is deliberately not what ships.
+
+### The story fan
+
+Three photo tiles dealt like a hand, in `#fan-stage`.
+
+- The **CSS already spreads them** with percentage translates, so a JS-off visit sees three separate
+  photos. JS adds `.is-armed` (stacked, opacity 0), then re-measures the spread in pixels against the
+  live container and springs them open on intersection. Same "arm from JS only" rule as the reveal unit.
+- Rotated tiles overhang the stage by ~10px at the corners. That is the fan reading as a fan — the
+  stage does not clip and the page padding absorbs it. Do not "fix" it.
+
 ### The menu modal
 
 The only stateful UI. Four `<button data-cat="…">` cards open `#modal`; `CATS` in the script is the
@@ -120,8 +171,11 @@ single source of truth for what each one contains.
 
 - Adding a menu means adding one entry to `CATS[key].menus` — the fan maths reads the array length,
   there are no parallel arrays to keep in sync any more.
-- `place()` spreads the cards: `off = i - (n-1)/2`, then translate `off*190px`, rotate `off*8deg`,
-  scale down by `0.06` per step from centre. Cards start stacked at opacity 0.
+- The spread is **measured, not a fixed pixel step.** `metrics(n)` derives card width and spread from
+  the live viewport *and* from the stage height (`min(520px, 58vh)`), because on a landscape phone the
+  short axis is vertical. `place()` then does `off = i - (n-1)/2`, translate `off*spread`, rotate
+  `off*7deg`, scale down `0.05` per step. Cards start stacked at opacity 0. An open fan re-measures
+  on resize/rotate.
 - The fan needs **two** `requestAnimationFrame`s before applying the open transform. One frame is not
   enough — the browser collapses both states into a single recalc and nothing animates.
 - Escape, the close button, and a backdrop click all close it; focus returns to the card that opened it.
@@ -166,21 +220,24 @@ reveal and reel units in JS. Any new animation must survive that block being act
 - **Asset paths must stay relative** (`instagram_images/...`, `menus_badriandhania/...`). The site is
   deployed to GitHub Pages under the `/mazaj-cafe-website/` subpath *and* to Vercel at root; a leading
   `/` breaks the Pages deploy. A previous commit exists purely to fix this.
-- **Never use U+2212 MINUS SIGN (`−`) in SVG path data.** It silently invalidates the whole `d`
-  attribute. The two torn-paper banner edges depend on ASCII hyphen-minus.
 - **Gradients are physical, the page is not.** `linear-gradient(to left, …)` does not flip in RTL. The
   hero veil has to darken toward the *right*, because that is where the copy sits. Getting this
-  backwards is exactly how the hero text ended up unreadable once already.
+  backwards is exactly how the hero text ended up unreadable once already — and the 2026-08-14 design
+  handoff shipped it backwards (`to left`) again. It is `to right` here on purpose.
+- **Never use U+2212 MINUS SIGN (`−`) in SVG path data.** It silently invalidates the whole `d`
+  attribute. No SVG paths survive in the page today, but the rule applies to any you add.
+- **A CSS custom property inside a JS-assigned `transition` shorthand parses inconsistently.** The hero
+  entrance writes a literal `cubic-bezier(...)`, not `var(--ease-out)`.
 - **Menu cards are `<button>`s whose children are `<span>`s.** They need `display: block` or
   `aspect-ratio` and margins are silently dropped on the inline box.
 - **`og:image` must stay an absolute URL** (relative ones are unreliable across crawlers), so it is
   pinned to the GitHub Pages host even though the site also runs on Vercel.
-- Images are unoptimized: ~24 MB of assets. Do not add more full-size PNGs to `docs/preview/` without
+- Images are unoptimized: ~27 MB of assets. Do not add more full-size PNGs to `docs/preview/` without
   compressing — both previews there are JPEG for that reason.
 - `docs/preview/hero.jpg` and `home.jpg` are embedded in `README.md`; regenerate them if the hero or
   the overall page changes materially.
 - The two old `<section style="display:none">` blocks (dead menu list + products grid) were removed in
-  the rebuild. They are still in git history if anyone wants them back.
+  the August rebuild; the MAZAJ torn-paper banner was removed on 2026-08-14. Both are in git history.
 
 ## Deployment
 

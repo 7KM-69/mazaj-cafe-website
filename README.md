@@ -20,9 +20,10 @@ HTML · CSS · Vanilla JS
 A single-page site for **Mazaj (مزاج)** — the Egypt arm of *بدري وهنية*, a spice, nut, cake and
 specialty-coffee house that started in **Gaza in 1970** and now runs three branches in Cairo.
 
-The page is Arabic-first and fully RTL: a photographic hero, the brand's origin story with counting
-statistics, a torn-paper **MAZAJ** banner, four menu categories that fan open into a modal, a strip of
-looping reels, and the three branches with their real addresses, hours and phone numbers.
+The page is Arabic-first and fully RTL: a full-screen video hero behind a progress-tracking preloader,
+the brand's origin story with counting statistics and a fanned photo deck, four menu categories that
+fan open into a modal, a strip of looping reels, and the three branches with their real addresses,
+hours and phone numbers.
 
 It's a **front-end / brand site**: no backend, no checkout. The craft is in the layout, the type, the
 image treatment, and the motion.
@@ -35,6 +36,10 @@ image treatment, and the motion.
 
 - **Arabic-first and fully RTL.** Logical properties throughout; Latin strings carry their own
   `dir` so bidi never reorders a phone number or a branch name.
+- **A video hero with an honest preloader.** The loading bar tracks four real assets and dismisses
+  itself on a hard 6-second cap, so a slow network delays the page but never traps it. The hero copy
+  ships in the HTML and is re-hydrated from `content/hero-content.json`, so a failed fetch still
+  leaves a complete hero.
 - **Light and dark mode.** Resolved before first paint from `localStorage` or the OS preference, so
   the page never flashes the wrong theme. One toggle in the header.
 - **A reel strip that actually plays.** Muted, looping 9:16 clips from the brand's own channels in a
@@ -55,7 +60,7 @@ image treatment, and the motion.
 | Markup | HTML5, single `index.html` |
 | Styling | Hand-written CSS with custom properties, no framework |
 | Motion | CSS transitions and keyframes; IntersectionObserver for reveals and reel playback |
-| Media | `<video>`, re-encoded to 540×960 loops with ffmpeg |
+| Media | `<video>` — a 2.5 MB hero loop and 540×960 reel clips, re-encoded with ffmpeg |
 | Local dev | Node `serve.mjs` (static server, with Range support for video) |
 | Hosting | GitHub Pages + Vercel (static) |
 
@@ -73,9 +78,10 @@ Or open `index.html` in any static server. There are no dependencies to install 
 ```
 index.html               # the entire site (markup + CSS + JS)
 brand/                   # the Mazaj logo
+content/                 # hero copy as JSON, fetched at runtime to override the markup
 instagram_images/        # brand + lifestyle photography used across the page
 menus_badriandhania/     # the seven menu covers behind the four category cards
-videos/                  # the reel clips + poster frames (see videos/README.md)
+videos/                  # the hero loop, the reel clips + poster frames (see videos/README.md)
 serve.mjs                # local static dev server
 tools/shot.mjs           # screenshots desktop + mobile, reports browser errors
 CLAUDE.md                # working notes for anyone (or anything) editing this file

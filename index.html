@@ -25,9 +25,9 @@
   <!-- Preconnect: Google Fonts DNS + TLS resolved before the CSS request fires -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <!-- The hero image is a CSS background on a nested div, so the preload scanner
-       would otherwise not find it until the stylesheet has parsed. -->
-  <link rel="preload" as="image" href="instagram_images/post_025.jpg" fetchpriority="high">
+  <!-- The hero poster is what the visitor sees until the video has decoded a
+       first frame, so it is worth fetching at high priority. -->
+  <link rel="preload" as="image" href="instagram_images/post_041.jpg" fetchpriority="high">
   <!-- Cairo 400/500/600/700/900 — Montserrat 400/500/600/700/800/900 -->
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;900&family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
@@ -75,7 +75,7 @@
   /* Elevation — warm-based, never neutral grey */
   --sh-card: 0 8px 24px rgba(46, 46, 46, .08);
   --sh-raised: 0 18px 40px -12px rgba(46, 46, 46, .16);
-  --sh-seal: 0 10px 22px rgba(120, 10, 6, .38);
+  --sh-seal: 0 14px 30px -8px rgba(120, 10, 6, .55);
   --sh-product: 0 32px 64px -24px rgba(58, 20, 8, .48);
   /* Motion */
   --ease-out: cubic-bezier(.22, 1, .36, 1);
@@ -87,6 +87,7 @@
   --z-header: 80;
   --z-modal: 200;
   --z-skip: 300;
+  --z-preload: 500;
 }
 
 :root[data-theme="dark"] {
@@ -132,7 +133,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 .ltr { direction: ltr; text-align: right; }
 .num { font-family: 'Montserrat', sans-serif; font-weight: 800; }
 
-.wrap { max-width: 1200px; margin-inline: auto; padding-inline: 32px; }
+.wrap { max-width: 1200px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 32px); }
 .lat { font-family: 'Montserrat', sans-serif; }
 
 .skip {
@@ -142,43 +143,79 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 }
 .skip:focus { top: 16px; color: #FFFFFF; }
 
+/* ═══ PRELOADER ════════════════════════════════════════════════════════════ */
+
+/* Progress is real, not a fake timer: the logo fills only as each tracked asset
+   (logo, hero poster, hero copy, hero video) actually resolves. A JS-off visit
+   never sees it at all — see the <noscript> rule at the end of this block. */
+.preload {
+  position: fixed; inset: 0; z-index: var(--z-preload); background: #0B0B0C;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px;
+  transition: opacity 600ms var(--ease-out);
+}
+.preload[hidden] { display: none; }
+.preload.is-fading { opacity: 0; pointer-events: none; }
+.preload-mark { position: relative; width: 120px; height: 120px; }
+.preload-mark .blob { position: absolute; inset: 0; width: 120px; height: 120px; box-shadow: 0 8px 24px rgba(0, 0, 0, .35); }
+.preload-mark img { position: absolute; inset: 0; margin: auto; width: 98px; height: 98px; object-fit: cover; border-radius: 50%; }
+/* Ghost copy underneath, so the unfilled part of the mark still reads as a logo. */
+.preload-ghost { filter: grayscale(1) contrast(1.5) brightness(1.75); opacity: .4; }
+.preload-fill { clip-path: inset(100% 0 0 0); transition: clip-path 220ms linear; }
+.preload-pct {
+  font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 700;
+  letter-spacing: .12em; color: #9AA3A9; font-variant-numeric: tabular-nums;
+}
+
 /* ═══ HEADER ═══════════════════════════════════════════════════════════════ */
 
+/* Glass over the hero video, solid surface once the hero has scrolled past.
+   `.is-solid` is added by JS from an IntersectionObserver on the hero. */
 .hdr {
-  position: sticky; top: 0; z-index: var(--z-header);
-  background: var(--mz-header);
-  backdrop-filter: blur(10px) saturate(1.2);
-  -webkit-backdrop-filter: blur(10px) saturate(1.2);
-  border-bottom: 1px solid var(--mz-border);
+  position: fixed; top: 0; inset-inline: 0; z-index: var(--z-header);
+  background: transparent; border-bottom: 1px solid transparent;
+  backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
   transition: background 320ms var(--ease-out), border-color 320ms var(--ease-out);
 }
 .hdr-in {
-  max-width: 1200px; margin-inline: auto; padding-inline: 32px;
+  max-width: 1200px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 32px);
   min-height: 80px; padding-block: 12px;
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 24px;
 }
 .hdr-nav { display: flex; align-items: center; gap: 32px; }
 .hdr-nav a {
-  font-size: 15px; font-weight: 700; color: var(--mz-ink); padding-block: 12px;
+  font-size: 15px; font-weight: 700; color: #FFFFFF; padding-block: 12px;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .4);
 }
-.hdr-nav a:hover, .hdr-nav a[aria-current="true"] { color: var(--mz-accent); }
+.hdr-nav a:hover, .hdr-nav a[aria-current="true"] { color: rgba(255, 255, 255, .72); }
 .hdr-side { display: flex; align-items: center; gap: 20px; }
 
+.hdr.is-solid {
+  background: var(--mz-header);
+  border-bottom-color: var(--mz-border);
+}
+.hdr.is-solid .hdr-nav a { color: var(--mz-ink); text-shadow: none; }
+.hdr.is-solid .hdr-nav a:hover, .hdr.is-solid .hdr-nav a[aria-current="true"] { color: var(--mz-accent); }
+.hdr.is-solid .ico { color: var(--mz-muted); }
+.hdr.is-solid .ico:hover { color: var(--mz-accent); }
+.hdr.is-solid .theme-btn { border-color: var(--mz-border); background: var(--mz-card); color: var(--mz-ink); }
+.hdr.is-solid .theme-btn:hover { border-color: var(--mz-accent); color: var(--mz-accent); }
+
 .ico {
-  display: flex; color: var(--mz-muted); padding: 10px; margin: -10px;
+  display: flex; color: rgba(255, 255, 255, .86); padding: 10px; margin: -10px;
   transition: color 200ms var(--ease-out), transform 200ms var(--ease-out);
 }
-.ico:hover { color: var(--mz-accent); transform: translateY(-2px); }
+.ico:hover { color: #FFFFFF; transform: translateY(-2px); }
 
 .theme-btn {
   all: unset; cursor: pointer; box-sizing: border-box;
   display: inline-flex; align-items: center; gap: 10px;
   height: 44px; padding-inline: 16px; border-radius: 999px;
-  border: 1.5px solid var(--mz-border); background: var(--mz-card); color: var(--mz-ink);
+  border: 1.5px solid rgba(255, 255, 255, .55); background: rgba(255, 255, 255, .10);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #FFFFFF;
   font-family: 'Cairo', sans-serif; font-size: 13px; font-weight: 700;
   transition: background 260ms var(--ease-out), border-color 260ms var(--ease-out), color 260ms var(--ease-out);
 }
-.theme-btn:hover { border-color: var(--mz-accent); color: var(--mz-accent); }
+.theme-btn:hover { background: #FFFFFF; border-color: #FFFFFF; color: #25495C; }
 .theme-btn:active { transform: translateY(1px); }
 .theme-dot {
   width: 16px; height: 16px; border-radius: 50%;
@@ -193,7 +230,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   border-radius: 48% 52% 55% 45% / 55% 45% 52% 48%;
   display: grid; place-items: center; overflow: hidden; flex-shrink: 0;
 }
-.blob-sm { width: 64px; height: 64px; box-shadow: var(--sh-card); }
+.blob-sm { width: 64px; height: 64px; box-shadow: 0 8px 24px rgba(0, 0, 0, .24); }
 .blob-sm img { width: 52px; height: 52px; }
 .blob-lg { width: 84px; height: 84px; }
 .blob-lg img { width: 68px; height: 68px; }
@@ -203,48 +240,59 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
 .hero {
   position: relative; display: flex; align-items: center; overflow: hidden;
-  background: #25495C;
-  min-height: 88vh;
-  min-height: 88dvh;
+  background: #0B0B0C; isolation: isolate;
+  min-height: 100vh;
+  min-height: 100dvh;
 }
-.hero-bg { position: absolute; inset: 0; background: url('instagram_images/post_025.jpg') center 62% / cover no-repeat; }
+.hero-video {
+  position: absolute; inset: 0; z-index: 0;
+  width: 100%; height: 100%; object-fit: cover; object-position: center 45%;
+}
 /* Darkest under the copy. The page is RTL, so the text block sits on the right
-   and the veil has to ramp up toward the right edge, not away from it. */
-.hero-veil { position: absolute; inset: 0; background: linear-gradient(to right, rgba(20,38,48,.20) 0%, rgba(20,38,48,.62) 45%, rgba(20,38,48,.88) 100%); }
-.hero-foot { position: absolute; inset-inline-start: 0; bottom: 0; width: 100%; height: 200px; background: linear-gradient(to bottom, transparent, rgba(20,38,48,.55)); }
+   and the veil has to ramp up toward the right edge, not away from it —
+   `linear-gradient` is physical and does not flip with `dir`. */
+.hero-veil {
+  position: absolute; inset: 0; z-index: 1;
+  background: linear-gradient(to right, rgba(0,0,0,.18) 0%, rgba(0,0,0,.46) 54%, rgba(0,0,0,.74) 100%);
+}
+.hero-foot {
+  position: absolute; inset-inline-start: 0; bottom: 0; z-index: 1;
+  width: 100%; height: 44%; background: linear-gradient(to bottom, transparent, rgba(0,0,0,.62));
+}
 .hero-in {
-  position: relative; z-index: 5; width: 100%;
-  max-width: 1200px; margin-inline: auto; padding-inline: 32px; padding-block: 96px;
+  position: relative; z-index: 2; width: 100%;
+  max-width: 1200px; margin-inline: auto; padding-inline: clamp(20px, 5vw, 32px);
+  padding-block: clamp(120px, 16vh, 160px) clamp(88px, 12vh, 132px);
 }
 .hero-eyebrow {
-  font-family: 'Montserrat', sans-serif; font-size: 13px; font-weight: 600;
-  letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.9);
-  margin-bottom: 18px; text-shadow: 0 2px 6px rgba(0,0,0,.45);
+  font-family: 'Montserrat', sans-serif; font-size: clamp(11px, 1.1vw, 13px); font-weight: 600;
+  letter-spacing: .16em; text-transform: uppercase; color: rgba(255,255,255,.86);
+  margin-bottom: 16px; text-shadow: 0 2px 8px rgba(0,0,0,.5);
 }
 .hero h1 {
   font-family: 'Montserrat', sans-serif; font-weight: 900;
-  font-size: clamp(2.75rem, 7vw, 5.5rem); line-height: .95; letter-spacing: -.01em;
-  text-transform: uppercase; color: #FFFFFF; text-shadow: 0 2px 10px rgba(0,0,0,.45);
+  font-size: clamp(3rem, 8.4vw, 6.5rem); line-height: .9; letter-spacing: -.02em;
+  text-transform: uppercase; color: #FFFFFF; text-shadow: 0 4px 28px rgba(0,0,0,.5);
 }
 .hero-sub {
-  font-size: clamp(1.625rem, 3.5vw, 2.5rem); font-weight: 900; line-height: 1.15;
-  color: #FFFFFF; margin-top: 4px; text-shadow: 0 2px 6px rgba(0,0,0,.35);
+  font-size: clamp(1.5rem, 3.2vw, 2.375rem); font-weight: 900; line-height: 1.2;
+  color: #FFFFFF; margin-top: 10px; text-shadow: 0 2px 12px rgba(0,0,0,.45);
 }
 .hero-lede {
-  font-size: clamp(1.0625rem, 1.6vw, 1.25rem); font-weight: 500; line-height: 1.9;
-  color: rgba(255,255,255,.92); margin-top: 22px; max-width: 52ch;
-  text-shadow: 0 2px 6px rgba(0,0,0,.35);
+  font-size: clamp(1rem, 1.5vw, 1.1875rem); font-weight: 500; line-height: 1.95;
+  color: rgba(255,255,255,.90); margin-top: 20px; max-width: 48ch;
+  text-shadow: 0 2px 10px rgba(0,0,0,.45);
 }
-.hero-cta { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 38px; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 36px; }
 
 /* ═══ BUTTONS ══════════════════════════════════════════════════════════════ */
 
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  height: 52px; padding-inline: 32px; border-radius: 999px;
-  font-family: 'Cairo', sans-serif; font-size: 17px; font-weight: 700;
-  transition: transform 200ms var(--ease-out), box-shadow 200ms var(--ease-out),
-              background 200ms var(--ease-out), filter 200ms var(--ease-out), color 200ms var(--ease-out);
+  min-height: 54px; padding-inline: clamp(24px, 3vw, 34px); border-radius: 999px;
+  font-family: 'Cairo', sans-serif; font-size: clamp(15px, 1.4vw, 17px); font-weight: 700;
+  transition: transform 260ms var(--ease-out), box-shadow 200ms var(--ease-out),
+              background 260ms var(--ease-out), filter 260ms ease, color 200ms var(--ease-out);
 }
 .btn-primary {
   background: radial-gradient(100% 100% at 35% 25%, #DF2C16 0%, #C40709 45%, #8F0F06 100%);
@@ -252,10 +300,14 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 }
 .btn-primary:hover { filter: brightness(1.08); transform: translateY(-2px); color: #FFFFFF; }
 .btn-primary:active { transform: translateY(1px); filter: brightness(.94); }
-.btn-light { background: #FFFFFF; color: var(--mz-olive); box-shadow: var(--sh-card); }
-.btn-light:hover { background: #FBF7F4; color: var(--mz-olive); box-shadow: var(--sh-raised); transform: translateY(-2px); }
-.btn-light:active { transform: translateY(1px); }
-.btn-sm { height: 44px; padding-inline: 20px; font-size: .875rem; }
+/* Glass twin of the primary, for use over the hero video only. */
+.btn-glass {
+  border: 1.5px solid rgba(255,255,255,.55); background: rgba(255,255,255,.10);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); color: #FFFFFF;
+}
+.btn-glass:hover { background: #FFFFFF; border-color: #FFFFFF; color: #25495C; transform: translateY(-2px); }
+.btn-glass:active { transform: translateY(1px); }
+.btn-sm { min-height: 44px; height: 44px; padding-inline: 20px; font-size: .875rem; }
 .btn-solid { background: var(--mz-accent); color: #FFFFFF; }
 .btn-solid:hover { background: var(--mz-accent-hover); color: #FFFFFF; transform: translateY(-2px); }
 .btn-solid:active { transform: translateY(1px); }
@@ -290,52 +342,62 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   color: var(--mz-accent); line-height: 1; font-variant-numeric: tabular-nums;
 }
 .stat span { display: block; font-size: .875rem; font-weight: 600; color: var(--mz-muted); margin-top: 8px; }
-.bento { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 240px 200px; gap: 16px; }
-.bento figure { border-radius: 24px; overflow: hidden; box-shadow: var(--sh-card); margin: 0; }
-.bento figure:first-child { grid-column: 1 / 3; box-shadow: var(--sh-raised); }
-.bento img { width: 100%; height: 100%; object-fit: cover; }
+.story-name { font-size: 1.5rem; font-weight: 700; color: var(--mz-ink); margin-top: 40px; }
+.story-handle { color: var(--mz-muted); margin-top: 6px; }
 
-/* ═══ MAZAJ BANNER ═════════════════════════════════════════════════════════ */
-
-.banner { position: relative; background: #25495C; padding-block: clamp(96px, 12vw, 150px); overflow: hidden; }
-.banner-bg { position: absolute; inset: 0; background: url('instagram_images/post_036.jpg') center / cover no-repeat; opacity: .42; }
-.banner-veil { position: absolute; inset: 0; background: linear-gradient(to left, rgba(20,38,48,.72), rgba(20,38,48,.35), rgba(20,38,48,.72)); }
-/* Torn-paper edges. NOTE: only ASCII hyphen-minus in path data — a U+2212 here
-   silently invalidates the whole `d` attribute and the edge vanishes. */
-.banner-edge { position: absolute; inset-inline-start: 0; width: 100%; height: 72px; z-index: 5; }
-.banner-edge-top { top: -1px; }
-.banner-edge-bottom { bottom: -1px; }
-.banner-edge path { fill: var(--mz-surface); }
-.banner-in { position: relative; z-index: 6; text-align: center; padding-inline: 24px; }
-.banner-eyebrow { font-family: 'Montserrat', sans-serif; font-size: .875rem; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.85); }
-.banner h2 {
-  font-family: 'Montserrat', sans-serif; font-weight: 900;
-  font-size: clamp(3.5rem, 12vw, 9rem); line-height: 1; letter-spacing: -.02em;
-  color: #FFFFFF; text-transform: uppercase; margin-top: 10px; text-shadow: 0 2px 6px rgba(0,0,0,.35);
+/* Three photo tiles fanned out like a dealt hand. The default spread below is
+   pure CSS so a JS-off visitor still sees three separate photos; JS re-measures
+   it in pixels against the live container and springs them open on scroll. */
+.fan-stage {
+  position: relative; width: 100%; min-height: clamp(380px, 52vw, 540px);
+  display: flex; align-items: center; justify-content: center;
 }
-.banner-tag { font-size: clamp(1.25rem, 2.4vw, 1.75rem); font-weight: 700; color: #FFFFFF; margin-top: 8px; }
+.fan-tile {
+  position: absolute; width: clamp(190px, 52%, 260px); aspect-ratio: 1;
+  background: var(--mz-card); border-radius: 16px; padding: 8px; cursor: pointer;
+  box-shadow: 0 14px 30px -10px rgba(46, 46, 46, .22);
+  transition: transform 900ms var(--ease-spring), opacity 600ms var(--ease-out);
+}
+.fan-tile img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; pointer-events: none; }
+.fan-tile[data-tile="left"]   { z-index: 30; transform: translate(-46%, 10px) rotate(-8deg); box-shadow: 0 16px 34px -10px rgba(46, 46, 46, .28); }
+.fan-tile[data-tile="middle"] { z-index: 20; transform: translate(0, 0) rotate(6deg); }
+.fan-tile[data-tile="right"]  { z-index: 10; transform: translate(46%, 20px) rotate(-6deg); }
+/* Armed from JS only — never from the stylesheet, or a JS-off visit is blank. */
+.fan-stage.is-armed .fan-tile { opacity: 0; transform: translate(0, 26px) scale(.9); }
 
 /* ═══ MENUS ════════════════════════════════════════════════════════════════ */
 
 .menus { background: var(--mz-surface); padding-block: clamp(64px, 9vw, 128px) 0; scroll-margin-top: 104px; }
-.menu-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 24px; }
+.menus-head { text-align: center; margin-bottom: 56px; }
+.menus-head .eyebrow, .menus-head .h2 { text-align: center; }
+.menus-hint { font-size: 1rem; color: var(--mz-muted); margin-top: 12px; }
+/* `min(100%, 250px)` rather than a bare 250px: below 250px viewport-minus-padding
+   a bare minmax floor overflows the grid instead of collapsing to one column. */
+.menu-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr));
+  gap: clamp(16px, 2.2vw, 24px); align-items: stretch;
+}
 .menu-card {
-  all: unset; box-sizing: border-box; cursor: pointer; display: block;
-  border-radius: 24px; overflow: hidden; box-shadow: var(--sh-card);
+  all: unset; box-sizing: border-box; cursor: pointer;
+  display: flex; flex-direction: column; height: 100%;
+  border-radius: 20px; overflow: hidden; box-shadow: var(--sh-card);
   transition: transform 260ms var(--ease-out), box-shadow 260ms var(--ease-out);
 }
 .menu-card:hover { transform: translateY(-6px); box-shadow: var(--sh-raised); }
 .menu-card:active { transform: translateY(-1px); }
-/* The card is a <button>, so its children are spans — they need display:block
-   or aspect-ratio and margins are silently dropped on the inline box. */
-.menu-card-img { display: block; aspect-ratio: 4/5; overflow: hidden; background: #EBE3D7; }
+.menu-card-img { display: block; aspect-ratio: 4/5; overflow: hidden; background: #EBE3D7; flex-shrink: 0; }
 .menu-card-img img { width: 100%; height: 100%; object-fit: cover; }
-.menu-card-body { display: block; padding: 20px 22px 24px; }
-.menu-card-kicker { display: block; font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
-.menu-card-title { display: block; font-size: 1.375rem; font-weight: 900; margin-top: 4px; line-height: 1.25; }
+/* Equal-height cards: the body flexes and the CTA chip is pushed to the floor
+   by `margin-top:auto`, so a two-line title never shoves the chip out of line. */
+.menu-card-body {
+  display: flex; flex-direction: column; align-items: flex-start; flex: 1;
+  padding: clamp(16px, 2vw, 20px) clamp(16px, 2vw, 22px) clamp(20px, 2.4vw, 24px);
+}
+.menu-card-kicker { font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; }
+.menu-card-title { font-size: 1.375rem; font-weight: 900; margin-top: 4px; margin-bottom: 18px; line-height: 1.25; }
 .menu-card-cta {
   display: inline-flex; align-items: center; height: 38px; padding-inline: 18px;
-  border-radius: 999px; background: #FFFFFF; font-size: .875rem; font-weight: 700; margin-top: 16px;
+  border-radius: 999px; background: #FFFFFF; font-size: .875rem; font-weight: 700; margin-top: auto;
 }
 /* Flavour-coded per product family — the background carries the category. */
 .mc-savoury { background: #BDC19A; }
@@ -372,16 +434,16 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
 /* ═══ BRANCHES ═════════════════════════════════════════════════════════════ */
 
-.branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 24px; }
+.branch-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: clamp(16px, 2.2vw, 24px); }
 .branch {
   background: var(--mz-card); border: 1px solid var(--mz-border); border-radius: 24px;
   overflow: hidden; box-shadow: var(--sh-card);
-  display: grid; grid-template-columns: minmax(120px, 190px) 1fr;
+  display: grid; grid-template-columns: minmax(104px, 32%) 1fr;
   transition: transform 260ms var(--ease-out), box-shadow 260ms var(--ease-out);
 }
 .branch:hover { transform: translateY(-4px); box-shadow: var(--sh-raised); }
 .branch > img { width: 100%; height: 100%; min-height: 260px; object-fit: cover; }
-.branch-body { padding: 26px 28px; }
+.branch-body { padding: clamp(18px, 2.4vw, 26px) clamp(18px, 2.6vw, 28px); }
 .branch-body h3 { font-size: clamp(1.25rem, 2.4vw, 1.75rem); font-weight: 900; color: var(--mz-ink); margin-top: 4px; }
 .branch-addr { font-size: .875rem; color: var(--mz-muted); margin-top: 10px; line-height: 1.7; }
 .branch-hours { font-size: .875rem; color: var(--mz-body); margin-top: 14px; line-height: 1.9; }
@@ -417,10 +479,11 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   background: rgba(46, 46, 46, .78);
   backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   display: flex; flex-direction: column; align-items: center; justify-content: center;
-  padding: 32px; animation: mz-fade 260ms var(--ease-out) both;
+  padding: clamp(16px, 4vw, 32px); overflow: auto;
+  animation: mz-fade 260ms var(--ease-out) both;
 }
-.modal-inner { position: relative; width: 100%; max-width: 1100px; display: flex; flex-direction: column; align-items: center; }
-.modal-head { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 24px; margin-bottom: 32px; }
+.modal-inner { position: relative; width: 100%; max-width: 1100px; margin: auto; display: flex; flex-direction: column; align-items: center; }
+.modal-head { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: clamp(12px, 2vw, 24px); margin-bottom: clamp(20px, 3vw, 32px); }
 .modal-kicker { font-family: 'Montserrat', sans-serif; font-size: .75rem; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.7); }
 .modal-head h2 { font-size: clamp(1.625rem, 3.5vw, 2.5rem); font-weight: 900; color: #FFFFFF; margin-top: 4px; }
 .modal-close {
@@ -433,10 +496,12 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 }
 .modal-close:hover { background: #FBF7F4; }
 .modal-close:active { transform: translateY(1px); }
-.modal-stage { position: relative; width: 100%; height: 520px; display: flex; align-items: center; justify-content: center; }
+/* Stage height is viewport-relative and the fan is measured against it in JS,
+   so two or three covers always land inside it instead of bleeding past. */
+.modal-stage { position: relative; width: 100%; height: min(520px, 58vh); min-height: 340px; display: flex; align-items: center; justify-content: center; }
 .fan-card {
-  position: absolute; width: min(320px, 74vw); aspect-ratio: 280/400;
-  border-radius: 24px; overflow: hidden; box-shadow: var(--sh-product); display: block;
+  position: absolute; aspect-ratio: 280/400;
+  border-radius: 20px; overflow: hidden; box-shadow: var(--sh-product); display: block;
   opacity: 0; transform: translate(0, 80px) scale(.62);
   transition: transform 900ms var(--ease-spring), opacity 500ms var(--ease-out), filter 260ms ease;
 }
@@ -459,7 +524,6 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 /* ═══ RESPONSIVE ═══════════════════════════════════════════════════════════ */
 
 @media (max-width: 980px) {
-  .wrap, .hdr-in, .hero-in { padding-inline: 24px; }
   .hdr-nav { gap: 20px; order: 2; width: 100%; justify-content: space-between; }
   .hdr-side { order: 1; width: 100%; justify-content: space-between; }
   .story-grid { gap: 40px; }
@@ -468,8 +532,6 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
 @media (max-width: 760px) {
   :root { --reel-h: 260px; }
-  .wrap, .hdr-in, .hero-in { padding-inline: 18px; }
-  .hero-in { padding-block: 72px; }
   /* Two compact rows instead of one tall stack — the header was eating a third
      of an 844px viewport before the hero got a look in. */
   .hdr-in { min-height: 0; padding-block: 10px; gap: 8px; }
@@ -479,13 +541,11 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   .blob-sm { width: 46px; height: 46px; }
   .blob-sm img { width: 38px; height: 38px; }
   .theme-btn { height: 40px; }
-  .bento { grid-template-rows: 200px 150px; }
+  .hero-in { padding-block: clamp(150px, 22vh, 190px) 72px; }
   .stats { gap: 10px; }
   .stat { padding: 14px 12px; }
   .stat b { font-size: 1.5rem; }
   .stat span { font-size: .75rem; }
-  .modal { padding: 18px; }
-  .modal-stage { height: 60vh; min-height: 340px; }
   .modal-head { margin-bottom: 20px; }
   .ftr-bottom { justify-content: flex-start; }
 }
@@ -493,9 +553,6 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 @media (max-width: 560px) {
   .branch { grid-template-columns: 1fr; }
   .branch > img { min-height: 200px; max-height: 240px; }
-  .branch-body { padding: 22px 20px; }
-  .bento { grid-template-columns: 1fr; grid-template-rows: 220px 180px 180px; }
-  .bento figure:first-child { grid-column: 1 / 2; }
   .theme-btn span:last-child { display: none; }
   .theme-btn { padding-inline: 13px; }
 }
@@ -516,10 +573,25 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 </head>
 <body>
 
+<!-- ═══ PRELOADER ════════════════════════════════════════════════════════════
+     In the markup rather than injected, so it covers the very first paint. The
+     <noscript> rule removes it outright when JS cannot dismiss it. -->
+<div class="preload" id="preload" role="status" aria-live="polite" aria-label="جارٍ التحميل">
+  <div class="preload-mark">
+    <div class="blob" aria-hidden="true"></div>
+    <img class="preload-ghost" src="brand/logo.jpg" alt="" aria-hidden="true">
+    <img class="preload-fill" id="preload-fill" src="brand/logo.jpg" alt="مزاج — Mazaj">
+  </div>
+  <p class="preload-pct lat" id="preload-pct" dir="ltr">0%</p>
+</div>
+<noscript><style>.preload { display: none; }</style></noscript>
+
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
 
-<!-- ═══ HEADER ═══════════════════════════════════════════════════════════════ -->
-<header class="hdr">
+<!-- ═══ HEADER ═══════════════════════════════════════════════════════════════
+     Fixed and transparent over the hero video; `.is-solid` swaps it to the
+     surface palette once the hero has scrolled past. -->
+<header class="hdr" id="hdr">
   <div class="hdr-in">
 
     <nav class="hdr-nav" aria-label="التنقل الرئيسي">
@@ -554,21 +626,24 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
 <main id="main">
 
-<!-- ═══ HERO ═════════════════════════════════════════════════════════════════ -->
+<!-- ═══ HERO ═════════════════════════════════════════════════════════════════
+     The copy ships in the markup so crawlers and JS-off visits see it, and is
+     re-hydrated from content/hero-content.json when that file resolves. -->
 <section class="hero">
-  <div class="hero-bg" role="img" aria-label="طاولة قهوة وحلويات في فرع مزاج"></div>
+  <video class="hero-video" id="hero-video" src="videos/hero.mp4" poster="instagram_images/post_041.jpg"
+         muted loop playsinline autoplay preload="auto" aria-hidden="true" tabindex="-1"></video>
   <div class="hero-veil" aria-hidden="true"></div>
   <div class="hero-foot" aria-hidden="true"></div>
 
   <div class="hero-in">
-    <p class="hero-eyebrow ltr" lang="en">Since 1970 · Gaza · Now in Egypt</p>
-    <h1 class="ltr" lang="en">MAZAJ</h1>
-    <p class="hero-sub">مزاج · قهوة مختصة وحلويات</p>
-    <p class="hero-lede">من غزة إلى القاهرة منذ عام <span class="num" dir="ltr">1970</span> — بهارات وتوابل ومكسرات وكيك وحلويات وقهوة مختصة، بمزاج واحد لا يتغيّر.</p>
+    <p class="hero-eyebrow ltr" lang="en" data-rise data-hero="kicker">Since 1970 · Gaza · Now in Egypt</p>
+    <h1 class="ltr" lang="en" data-rise data-hero="heading">MAZAJ</h1>
+    <p class="hero-sub" data-rise data-hero="subheading">مزاج · قهوة مختصة وحلويات</p>
+    <p class="hero-lede" data-rise data-hero="lead">من غزة إلى القاهرة منذ عام <span class="num" dir="ltr">1970</span> — بهارات وتوابل ومكسرات وكيك وحلويات وقهوة مختصة، بمزاج واحد لا يتغيّر.</p>
 
-    <div class="hero-cta">
-      <a class="btn btn-primary" href="#menus">تصفّح المنيو</a>
-      <a class="btn btn-light" href="#branches">فروعنا في مصر</a>
+    <div class="hero-cta" data-rise>
+      <a class="btn btn-primary" href="#menus" data-hero="cta1">تصفّح المنيو</a>
+      <a class="btn btn-glass" href="#branches" data-hero="cta2">فروعنا في مصر</a>
     </div>
   </div>
 </section>
@@ -600,50 +675,31 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
         </div>
       </div>
 
-      <p style="font-size:1.5rem; font-weight:700; color:var(--mz-ink); margin-top:40px;">بدري وهنية</p>
-      <p class="eyebrow ltr" lang="en" style="color:var(--mz-muted); margin-top:6px;">Badri &amp; Hania — badri.hania.eg</p>
+      <p class="story-name">بدري وهنية</p>
+      <p class="eyebrow ltr story-handle" lang="en">Badri &amp; Hania — badri.hania.eg</p>
     </div>
 
-    <div class="bento" data-reveal>
-      <figure>
+    <div class="fan-stage" id="fan-stage">
+      <div class="fan-tile" data-tile="left">
         <img src="instagram_images/post_041.jpg" alt="داخل فرع مزاج — بدري وهنية" loading="lazy" decoding="async" style="object-position:center 45%">
-      </figure>
-      <figure>
+      </div>
+      <div class="fan-tile" data-tile="middle">
         <img src="instagram_images/post_029.jpg" alt="بهارات وتوابل وقهوة مزاج" loading="lazy" decoding="async" style="object-position:center 55%">
-      </figure>
-      <figure>
+      </div>
+      <div class="fan-tile" data-tile="right">
         <img src="instagram_images/post_048.jpg" alt="مكسرات مزاج" loading="lazy" decoding="async" style="object-position:center 50%">
-      </figure>
+      </div>
     </div>
   </div>
-</section>
-
-<!-- ═══ MAZAJ BANNER ═════════════════════════════════════════════════════════ -->
-<section class="banner" aria-labelledby="banner-title">
-  <svg class="banner-edge banner-edge-top" viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0,0 C0,0 60,68 160,28 C240,0 340,62 460,18 C560,-10 640,58 760,22 C860,-4 960,64 1080,20 C1180,-8 1280,56 1380,16 L1440,8 L1440,0 Z"></path>
-  </svg>
-  <div class="banner-bg" aria-hidden="true"></div>
-  <div class="banner-veil" aria-hidden="true"></div>
-
-  <div class="banner-in">
-    <p class="banner-eyebrow ltr" lang="en" style="text-align:center">Enjoy The Moment</p>
-    <h2 class="ltr" id="banner-title" lang="en" style="text-align:center">MAZAJ</h2>
-    <p class="banner-tag">اطلب مزاجك</p>
-  </div>
-
-  <svg class="banner-edge banner-edge-bottom" viewBox="0 0 1440 72" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" aria-hidden="true">
-    <path d="M0,72 C0,72 80,4 200,44 C300,72 400,8 520,52 C620,80 720,6 840,48 C940,76 1040,10 1160,46 C1260,74 1360,12 1440,42 L1440,72 Z"></path>
-  </svg>
 </section>
 
 <!-- ═══ OUR MENUS ════════════════════════════════════════════════════════════ -->
 <section class="menus" id="menus">
   <div class="wrap">
-    <div data-reveal style="text-align:center; margin-bottom:56px;">
-      <p class="eyebrow ltr" lang="en" style="text-align:center">Our Menus</p>
+    <div class="menus-head" data-reveal>
+      <p class="eyebrow ltr" lang="en">Our Menus</p>
       <h2 class="h2">المنيو</h2>
-      <p style="font-size:1rem; color:var(--mz-muted); margin-top:12px;">اضغط على أي تصنيف لعرض المنيو كاملاً</p>
+      <p class="menus-hint">اضغط على أي تصنيف لعرض المنيو كاملاً</p>
     </div>
 
     <div class="menu-grid">
@@ -706,7 +762,10 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
   </div>
 </section>
 
-<!-- ═══ BRANCHES ═════════════════════════════════════════════════════════════ -->
+<!-- ═══ BRANCHES ═════════════════════════════════════════════════════════════
+     Addresses, map queries and phone numbers are field-verified. Do not
+     overwrite them from a design handoff — the design file carries a shortened,
+     incomplete version of the Nasr City and Madinaty entries. -->
 <section class="sec" id="branches">
   <div class="wrap">
     <div data-reveal style="margin-bottom:48px">
@@ -834,8 +893,9 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
 <script>
 /* ═══════════════════════════════════════════════════════════════════════════
-   Mazaj — page behaviour. Four independent units, each guarded so a failure in
-   one never takes the others down: theme, scroll reveal, menu modal, reel strip.
+   Mazaj — page behaviour. Independent units, each guarded so a failure in one
+   never takes the others down: preloader, theme, hero, story fan, reveal,
+   menu modal, reel strip, active nav.
    ═══════════════════════════════════════════════════════════════════════════ */
 (function () {
   'use strict';
@@ -890,7 +950,55 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
 
   var SETS = 3;   /* keep in sync with the -33.3333% in @keyframes mz-marquee */
 
-  /* ═══ 1. Theme ══════════════════════════════════════════════════════════ */
+  /* ═══ 1. Preloader ══════════════════════════════════════════════════════
+     Progress is real: each tracked asset ticks the counter as it resolves,
+     failures included. A 6-second hard cap guarantees the overlay is never
+     what keeps a visitor out of the page. */
+  var markLoaded = (function preload() {
+    var el = document.getElementById('preload');
+    var fill = document.getElementById('preload-fill');
+    var pct = document.getElementById('preload-pct');
+    if (!el || !fill || !pct) return function () {};
+
+    var keys = { logo: false, poster: false, content: false, video: false };
+    var total = 4, dismissed = false;
+
+    document.body.style.overflow = 'hidden';
+
+    function dismiss() {
+      if (dismissed) return;
+      dismissed = true;
+      el.classList.add('is-fading');
+      document.body.style.overflow = '';
+      setTimeout(function () { el.hidden = true; }, 620);
+    }
+    /* Hard cap — a stalled asset must never trap the page behind the overlay. */
+    var cap = setTimeout(dismiss, 6000);
+
+    function mark(key) {
+      if (dismissed || !(key in keys) || keys[key]) return;
+      keys[key] = true;
+      var done = 0, k;
+      for (k in keys) { if (keys[k]) done++; }
+      var p = Math.round((done / total) * 100);
+      fill.style.clipPath = 'inset(' + (100 - p) + '% 0 0 0)';
+      pct.textContent = p + '%';
+      if (p >= 100) { clearTimeout(cap); setTimeout(dismiss, 300); }
+    }
+
+    function probe(src, key) {
+      var img = new Image();
+      img.onload = function () { mark(key); };
+      img.onerror = function () { console.error('[Mazaj] preload asset failed:', src); mark(key); };
+      img.src = src;
+    }
+    probe('brand/logo.jpg', 'logo');
+    probe('instagram_images/post_041.jpg', 'poster');
+
+    return mark;
+  })();
+
+  /* ═══ 2. Theme ══════════════════════════════════════════════════════════ */
   (function theme() {
     var btn = document.getElementById('theme-btn');
     var label = document.getElementById('theme-label');
@@ -914,7 +1022,163 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     });
   })();
 
-  /* ═══ 2. Scroll reveal + count-up ═══════════════════════════════════════ */
+  /* ═══ 3. Hero — video, copy hydration, entrance ═════════════════════════ */
+  (function hero() {
+    var video = document.getElementById('hero-video');
+
+    /* Autoplay needs the properties set, not just the attributes: some engines
+       evaluate `muted` from the IDL attribute before the parser-set one lands. */
+    if (video) {
+      video.muted = true; video.defaultMuted = true; video.playsInline = true;
+      video.playbackRate = 1.5;
+      video.addEventListener('ratechange', function () {
+        if (video.playbackRate !== 1.5) video.playbackRate = 1.5;
+      });
+      video.addEventListener('loadeddata', function () { markLoaded('video'); }, { once: true });
+      video.addEventListener('error', function () {
+        console.error('[Mazaj] hero video failed to load: videos/hero.mp4', video.error);
+        markLoaded('video');
+      }, { once: true });
+      var p = video.play();
+      if (p && p.catch) p.catch(function (err) {
+        console.error('[Mazaj] hero video autoplay was blocked:', err);
+      });
+    } else {
+      markLoaded('video');
+    }
+
+    /* The copy is already in the markup; this only overwrites it when the JSON
+       resolves, so a failed fetch leaves a complete hero rather than a blank one. */
+    function pick(name) { return document.querySelector('[data-hero="' + name + '"]'); }
+
+    fetch('content/hero-content.json')
+      .then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+      .then(function (d) {
+        if (!d) return;
+        var map = { kicker: 'kicker', heading: 'heading', subheading: 'subheading', cta1: 'cta1', cta2: 'cta2' };
+        Object.keys(map).forEach(function (k) {
+          var el = pick(map[k]);
+          if (el && typeof d[k] === 'string' && d[k]) el.textContent = d[k];
+        });
+        var lead = pick('lead');
+        if (lead && typeof d.leadBefore === 'string') {
+          lead.textContent = '';
+          lead.appendChild(document.createTextNode(d.leadBefore));
+          var num = document.createElement('span');
+          num.className = 'num';
+          num.dir = 'ltr';
+          num.textContent = d.year || '1970';
+          lead.appendChild(num);
+          lead.appendChild(document.createTextNode(d.leadAfter || ''));
+        }
+      })
+      .catch(function (err) {
+        console.error('[Mazaj] hero content failed to load from content/hero-content.json:', err);
+      })
+      .then(function () { markLoaded('content'); });
+
+    /* Entrance, driven imperatively so a theme flip or a modal open can never
+       replay or reset it. */
+    if (reduced) return;
+    var nodes = Array.prototype.slice.call(document.querySelectorAll('[data-rise]'));
+    if (!nodes.length) return;
+    nodes.forEach(function (el) {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(26px)';
+      el.style.willChange = 'opacity, transform';
+    });
+    requestAnimationFrame(function () {
+      nodes.forEach(function (el, i) {
+        /* Literal easing, not var(--ease-out): a custom property inside the
+           `transition` shorthand is substituted late and parses inconsistently. */
+        var d = 120 + i * 110;
+        var e = 'cubic-bezier(.22,1,.36,1) ' + d + 'ms';
+        el.style.transition = 'opacity 900ms ' + e + ', transform 900ms ' + e;
+        el.style.opacity = '1';
+        el.style.transform = 'none';
+      });
+      setTimeout(function () { nodes.forEach(function (el) { el.style.willChange = ''; }); }, 1800);
+    });
+  })();
+
+  /* ═══ 4. Header state ═══════════════════════════════════════════════════
+     Transparent over the hero video, surface-coloured past it. Observed off a
+     one-pixel sentinel rather than a scroll listener. */
+  (function headerState() {
+    var hdr = document.getElementById('hdr');
+    var heroSec = document.querySelector('.hero');
+    if (!hdr || !heroSec || !('IntersectionObserver' in window)) return;
+
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { hdr.classList.toggle('is-solid', !e.isIntersecting); });
+    }, { rootMargin: '-88px 0px 0px 0px', threshold: 0 });
+    io.observe(heroSec);
+  })();
+
+  /* ═══ 5. Story fan ══════════════════════════════════════════════════════
+     The CSS already spreads the three tiles; this re-measures the spread in
+     pixels against the live container so it never overflows on tablet/mobile,
+     and springs them open on scroll with a per-tile hover. */
+  (function storyFan() {
+    var stage = document.getElementById('fan-stage');
+    if (!stage) return;
+    var tiles = Array.prototype.slice.call(stage.querySelectorAll('.fan-tile'));
+    if (!tiles.length) return;
+
+    var data = {}, open = false;
+
+    function layout() {
+      var W = stage.clientWidth || 400;
+      var tileW = Math.max(180, Math.min(260, W * 0.52));
+      var sx = Math.max(52, Math.min((W - tileW) / 2 - 6, tileW * 0.92));
+      data = {
+        left:   { base: 'translate(' + (-sx) + 'px, 10px) rotate(-8deg)', hover: 'translate(' + (-sx - 10) + 'px, 0px) rotate(1deg)' },
+        middle: { base: 'translate(0px, 0px) rotate(6deg)',               hover: 'translate(0px, -12px) rotate(0deg)' },
+        right:  { base: 'translate(' + sx + 'px, 20px) rotate(-6deg)',    hover: 'translate(' + sx + 'px, 10px) rotate(3deg)' }
+      };
+    }
+
+    function spread(stagger) {
+      open = true;
+      tiles.forEach(function (t, i) {
+        var d = data[t.dataset.tile];
+        if (!d) return;
+        t.style.transitionDelay = stagger ? (i * 180) + 'ms' : '0ms';
+        t.style.opacity = '1';
+        t.style.transform = d.base;
+      });
+    }
+
+    layout();
+    tiles.forEach(function (t) {
+      var role = t.dataset.tile;
+      t.addEventListener('mouseenter', function () { if (open && data[role]) t.style.transform = data[role].hover; });
+      t.addEventListener('mouseleave', function () { if (open && data[role]) t.style.transform = data[role].base; });
+    });
+
+    var resizeT;
+    window.addEventListener('resize', function () {
+      clearTimeout(resizeT);
+      resizeT = setTimeout(function () { layout(); if (open) spread(false); }, 120);
+    });
+
+    if (reduced || !('IntersectionObserver' in window)) { spread(false); return; }
+
+    stage.classList.add('is-armed');
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        spread(true);
+        io.unobserve(e.target);
+      });
+    }, { threshold: 0.25, rootMargin: '0px 0px -10% 0px' });
+    io.observe(stage);
+
+    /* Safety net, same reasoning as the scroll reveal below. */
+    setTimeout(function () { if (!open) spread(false); }, 4000);
+  })();
+
+  /* ═══ 6. Scroll reveal + count-up ═══════════════════════════════════════ */
   (function reveal() {
     var items = Array.prototype.slice.call(document.querySelectorAll('[data-reveal]'));
     var nums = Array.prototype.slice.call(document.querySelectorAll('[data-count]'));
@@ -968,7 +1232,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     }
   })();
 
-  /* ═══ 3. Menu modal ═════════════════════════════════════════════════════ */
+  /* ═══ 7. Menu modal ═════════════════════════════════════════════════════ */
   (function menus() {
     var modal = document.getElementById('modal');
     var stage = document.getElementById('modal-stage');
@@ -977,15 +1241,30 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     var closeBtn = document.getElementById('modal-close');
     if (!modal || !stage || !titleEl || !kickerEl || !closeBtn) return;
 
-    var lastFocus = null;
+    var lastFocus = null, openCards = [], openCount = 0;
 
-    /* Cards fan out from a stacked deck: rotation and scale fall off from the
-       centre so the middle card reads as the front one. */
+    /* The fan is measured, not guessed: card width and spread derive from the
+       live viewport, so two or three covers always sit inside the stage on a
+       phone instead of bleeding past its edges. */
+    function metrics(n) {
+      var vw = window.innerWidth || 1200;
+      var vh = window.innerHeight || 800;
+      var pad = vw < 640 ? 32 : 64;
+      var stageH = Math.max(340, Math.min(520, vh * 0.58));
+      var w = Math.min(320, (vw - pad) * (n > 1 ? 0.56 : 0.8));
+      /* Height, not just width, bounds the card — the stage is the short axis
+         on a landscape phone. 1.4286 is the 400/280 card aspect. */
+      w = Math.max(150, Math.min(w, (stageH - 36) / 1.4286));
+      return { w: w, spread: w * 0.58 };
+    }
+
     function place(card, i, n) {
+      var m = metrics(n);
       var off = i - (n - 1) / 2;
+      card.style.width = Math.round(m.w) + 'px';
       card.style.zIndex = String(Math.round(10 - Math.abs(off)));
-      card.style.transform = 'translate(' + (off * 190) + 'px, ' + (Math.abs(off) * 18) + 'px)'
-        + ' rotate(' + (off * 8) + 'deg) scale(' + (1 - Math.abs(off) * 0.06).toFixed(3) + ')';
+      card.style.transform = 'translate(' + (off * m.spread) + 'px, ' + (Math.abs(off) * 16) + 'px)'
+        + ' rotate(' + (off * 7) + 'deg) scale(' + (1 - Math.abs(off) * 0.05).toFixed(3) + ')';
       card.style.opacity = '1';
     }
 
@@ -999,7 +1278,8 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
       stage.textContent = '';
 
       var n = cat.menus.length;
-      var cards = cat.menus.map(function (m) {
+      openCount = n;
+      openCards = cat.menus.map(function (m) {
         var a = document.createElement('a');
         a.className = 'fan-card';
         a.href = m.url;
@@ -1010,6 +1290,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
         a.querySelector('img').src = m.img;
         a.querySelector('img').alt = 'غلاف ' + m.label;
         a.querySelector('span').textContent = m.label;
+        a.style.width = Math.round(metrics(n).w) + 'px';
         stage.appendChild(a);
         return a;
       });
@@ -1022,7 +1303,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
          collapses both states into a single style recalc and nothing animates. */
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          cards.forEach(function (c, i) { place(c, i, n); });
+          openCards.forEach(function (c, i) { place(c, i, n); });
         });
       });
     }
@@ -1030,6 +1311,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     function close() {
       modal.hidden = true;
       stage.textContent = '';
+      openCards = [];
       document.body.style.overflow = '';
       if (lastFocus && lastFocus.focus) lastFocus.focus();
     }
@@ -1040,9 +1322,19 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     closeBtn.addEventListener('click', close);
     modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
     window.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.hidden) close(); });
+
+    /* Re-measure on rotate/resize so an open fan follows the new viewport. */
+    var rT;
+    window.addEventListener('resize', function () {
+      if (modal.hidden || !openCards.length) return;
+      clearTimeout(rT);
+      rT = setTimeout(function () {
+        openCards.forEach(function (c, i) { place(c, i, openCount); });
+      }, 120);
+    });
   })();
 
-  /* ═══ 4. Reel strip ═════════════════════════════════════════════════════ */
+  /* ═══ 8. Reel strip ═════════════════════════════════════════════════════ */
   (function reels() {
     var track = document.getElementById('reel-track');
     var strip = document.getElementById('reels');
@@ -1118,7 +1410,7 @@ a:focus-visible, [tabindex]:focus-visible, button:focus-visible {
     });
   })();
 
-  /* ═══ 5. Active nav link ════════════════════════════════════════════════ */
+  /* ═══ 9. Active nav link ════════════════════════════════════════════════ */
   (function activeNav() {
     var links = Array.prototype.slice.call(document.querySelectorAll('.hdr-nav a'));
     var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });

@@ -1,10 +1,26 @@
 # videos/
 
-The clips for the reel strip between the menus and *Our Story*.
+The hero loop, plus the clips for the reel strip between the menus and *Our Story*.
 
-## What's here
+## `hero.mp4` — the hero background
 
-Five reels, pulled from the brand's own TikTok account (`@badri.hania.eg`) and re-encoded for the web:
+A ~5s landscape loop behind the hero copy, supplied by the brand and played muted at `playbackRate 1.5`.
+Its poster is `instagram_images/post_041.jpg`.
+
+**Re-encode anything that arrives here.** The file as supplied was 9.8 MB — 1790×1158 H.264 at
+15.5 Mbps with an audio track that can never be heard. What ships is 2.5 MB:
+
+```
+ffmpeg -i _raw/hero.mp4 -c:v libx264 -crf 26 -preset slow -profile:v high -level 4.0 \
+  -pix_fmt yuv420p -an -movflags +faststart videos/hero.mp4
+```
+
+This is the single heaviest asset on the page and it blocks the preloader, so its weight is the
+page's first-impression budget. Keep it under ~3 MB.
+
+## The reel strip
+
+Seven reels, pulled from the brand's own TikTok account (`@badri.hania.eg`) and re-encoded for the web:
 
 | File | Clip | Source |
 |---|---|---|
